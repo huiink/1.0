@@ -15,26 +15,28 @@ line_handler = WebhookHandler(LINE_CHANNEL_SECRET)
 @app.route('/')
 def home():
     return "LINE BOT 首頁"
-# Webhook endpoint
-@app.route("/callback", methods=['POST'])
+
+@app.route("/callback", methods=["POST"])
 def callback():
-    signature = request.headers['X-Line-Signature']
+    signature = request.headers["X-Line-Signature"]
     body = request.get_data(as_text=True)
-    
+
     try:
         line_handler.handle(body, signature)
-    except Exception as e:
-        print(e)
+    except InvalidSignatureError:
         abort(400)
-    return 'OK'
 
-# 事件處理器
+    return "OK"
+
 @line_handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    user_message = event.message.text
+    reply_message = f"你說了：{user_message}"
+    
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text='你說了: ' + event.message.text)
+        TextSendMessage(text=reply_message)
     )
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8000)
